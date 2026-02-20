@@ -40,21 +40,19 @@ class OpenWeatherMapAdapter(private val apiKey: String) : WeatherPort {
         }
 
         return try {
-            val url = "https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=$apiKey&units=metric"
+            val url = "https://api.openweathermap.org/data/2.5/weather?lat=\${location.latitude}&lon=\${location.longitude}&appid=\$apiKey&units=metric"
             val response: OpenWeatherResponse = client.get(url).body()
             
-            // OpenWeather standard endpoint gives 1h rain, we extrapolate or just use it as indicator for MVP
             val rainFound = response.rain?.`1h` ?: 0.0
-            val estimated7DaysRain = rainFound * 24 * 7 // Crude estimation for MVP scaling
+            val estimated7DaysRain = rainFound * 24 * 7
             
             WeatherData(
                 rain7Days = estimated7DaysRain,
                 avgHumidity = response.main.humidity
             )
         } catch (e: Exception) {
-            logger.error("Error fetching weather from OpenWeatherMap: ${e.message}")
-            // Fallback for MVP if API fails
-            WeatherData(rain7Days = 0.0, avgHumidity = 60.0)
+            logger.error("Error fetching weather from OpenWeatherMap: \${e.message}")
+            throw Exception("Fallo real al obtener el clima desde OpenWeatherMap. \${e.message}")
         }
     }
 }
