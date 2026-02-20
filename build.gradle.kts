@@ -41,6 +41,7 @@ dependencies {
     implementation("io.ktor:ktor-client-core-jvm")
     implementation("io.ktor:ktor-client-cio-jvm")
     implementation("io.ktor:ktor-client-content-negotiation-jvm")
+    implementation("org.apache.commons:commons-csv:1.10.0")
     
     // MongoDB
     implementation("org.litote.kmongo:kmongo-coroutine:4.11.0")

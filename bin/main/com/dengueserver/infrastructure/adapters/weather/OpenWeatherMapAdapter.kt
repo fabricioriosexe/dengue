@@ -36,8 +36,7 @@ class OpenWeatherMapAdapter(private val apiKey: String) : WeatherPort {
 
     override suspend fun getWeatherData(location: GeoPoint): WeatherData {
         if (apiKey == "dummy_key_for_testing" || apiKey.isEmpty()) {
-            logger.warn("Using dummy API key for OpenWeather. Falling back to simulated data.")
-            return WeatherData(rain7Days = 50.0, avgHumidity = 75.0)
+            throw Exception("OpenWeather API key is not configured. Please provide a valid key in .env.")
         }
 
         return try {
