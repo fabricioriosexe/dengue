@@ -10,8 +10,8 @@ import kotlinx.serialization.json.Json
 import io.ktor.http.HttpMethod
 import com.dengueserver.infrastructure.web.configureRouting
 import com.dengueserver.infrastructure.adapters.database.MongoRiskRepository
-import com.dengueserver.infrastructure.adapters.weather.SimulatedWeatherAdapter
-import com.dengueserver.infrastructure.adapters.epi.SimulatedEpiAdapter
+import com.dengueserver.infrastructure.adapters.weather.OpenWeatherMapAdapter
+import com.dengueserver.infrastructure.adapters.epi.SnvsEpiAdapter
 import com.dengueserver.application.usecases.CalculateRiskUseCase
 import com.dengueserver.application.usecases.GetRiskMapUseCase
 import com.dengueserver.application.usecases.UpdateDataUseCase
@@ -36,7 +36,8 @@ fun Application.module() {
     }
     
     val mongoUri = dotenv["MONGO_URI"] ?: "mongodb://localhost:27017"
-    
+    val openWeatherKey = dotenv["OPENWEATHER_API_KEY"] ?: "dummy_key_for_testing"
+        
     install(ContentNegotiation) {
         json(Json {
             prettyPrint = true
@@ -54,8 +55,8 @@ fun Application.module() {
     }
 
     val riskRepository = MongoRiskRepository(mongoUri)
-    val weatherPort = SimulatedWeatherAdapter()
-    val epiPort = SimulatedEpiAdapter()
+    val weatherPort = OpenWeatherMapAdapter(openWeatherKey)
+    val epiPort = SnvsEpiAdapter()
 
     val calculateRiskUseCase = CalculateRiskUseCase(weatherPort, epiPort, riskRepository)
     val getRiskMapUseCase = GetRiskMapUseCase(riskRepository)

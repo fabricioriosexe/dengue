@@ -9,13 +9,16 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.server.http.content.staticResources
 
 fun Application.configureRouting(
     getRiskMapUseCase: GetRiskMapUseCase,
     updateDataUseCase: UpdateDataUseCase
 ) {
     routing {
-        get("/") {
+        staticResources("/", "static")
+        
+        get("/api/health") {
             call.respond(mapOf("status" to "ok", "message" to "Dengue Prediction Server is running!"))
         }
 

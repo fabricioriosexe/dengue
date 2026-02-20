@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dengue Risk Map - Misiones</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        .overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 { margin-top: 0; font-size: 1.2rem; color: #333; }
+        button {
+            background-color: #007bff; color: white; border: none; padding: 10px 15px;
+            border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;
+        }
+        button:hover { background-color: #0056b3; }
+        #status { font-size: 0.9rem; color: #666; margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="overlay">
+        <h2>Dengue Risk - Misiones</h2>
+        <p>Modelo predictivo MVP</p>
+        <button onclick="updateData()">Sincronizar Datos</button>
+        <span id="status">Obteniendo riesgo actual...</span>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Leaflet Heat -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <script>
+        // Misiones coordinates
+        const map = L.map('map').setView([-26.9, -54.9], 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        let heatLayer = null;
+
+        async function loadRiskMap() {
+            try {
+                const response = await fetch('/risk-map');
+                const geoJson = await response.json();
+                
+                const heatPoints = geoJson.features.map(feature => {
+                    const [lng, lat] = feature.geometry.coordinates;
+                    const risk = feature.properties.risk; // 0 to 1
+                    
+                    // Leaflet.heat expects [lat, lng, intensity]
+                    return [lat, lng, risk * 10]; // Multiplied for visibility
+                });
+
+                if (heatLayer) {
+                    map.removeLayer(heatLayer);
+                }
+
+                // Config params for heatmap
+                heatLayer = L.heatLayer(heatPoints, {
+                    radius: 40,
+                    blur: 25,
+                    maxZoom: 9,
+                    gradient: {0.4: 'blue', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red'}
+                }).addTo(map);
+
+                document.getElementById('status').innerText = `Mapa cargado con ${heatPoints.length} puntos.`;
+            } catch (error) {
+                console.error("Error loading risk map:", error);
+                document.getElementById('status').innerText = "Error cargando mapa.";
+            }
+        }
+
+        async function updateData() {
+            document.getElementById('status').innerText = "Sincronizando APIs externas...";
+            try {
+                const response = await fetch('/update-data', { method: 'POST' });
+                if (response.ok) {
+                    document.getElementById('status').innerText = "Datos actualizados. Recargando mapa...";
+                    await loadRiskMap();
+                } else {
+                    document.getElementById('status').innerText = "Error al sincronizar.";
+                }
+            } catch (error) {
+                console.error("Error updating data:", error);
+                document.getElementById('status').innerText = "Error de red al sincronizar.";
+            }
+        }
+
+        // Init
+        loadRiskMap();
+    </script>
+</body>
+</html>

@@ -11,6 +11,20 @@ application {
     mainClass.set("com.dengueserver.ApplicationKt")
 }
 
+tasks.register<Jar>("buildFatJar") {
+    archiveBaseName.set("dengueserver")
+    archiveClassifier.set("all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest { 
+        attributes("Main-Class" to "com.dengueserver.ApplicationKt")
+    }
+    from(sourceSets.main.get().output)
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
+}
+
 repositories {
     mavenCentral()
 }
@@ -22,6 +36,11 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm")
     implementation("io.ktor:ktor-server-cors-jvm")
     implementation("ch.qos.logback:logback-classic:1.4.14")
+    
+    // Ktor Client for external APIs
+    implementation("io.ktor:ktor-client-core-jvm")
+    implementation("io.ktor:ktor-client-cio-jvm")
+    implementation("io.ktor:ktor-client-content-negotiation-jvm")
     
     // MongoDB
     implementation("org.litote.kmongo:kmongo-coroutine:4.11.0")
